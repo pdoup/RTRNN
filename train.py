@@ -6,11 +6,14 @@ Created on Fri Aug  4 20:42:47 2023.
 """
 import torch
 from torch import nn
+from tqdm import tqdm
 from typing import Tuple, Type, Union
 import numpy as np
 import os.path
 import json
 from datetime import datetime
+from sklearn.metrics import mean_squared_error as MSE
+from sklearn.metrics import mean_absolute_error as MAE
 from functools import singledispatchmethod
 from model import FusedRTRNN
 
@@ -136,17 +139,19 @@ class RTRNNTrainer:
 
         if pretrain_epochs is not None:
             # Pre-training stage
-            for epoch in range(pretrain_epochs):
-                outputs = self.model(x_train)
-                loss = self.criterion(outputs.squeeze(), y_train)
+            with tqdm(total=pretrain_epochs, desc='Pre-training', unit='epoch',
+                      ascii=True, bar_format='{desc}: {n_fmt}/{total_fmt} {postfix}',
+                      initial=0) as pbar:
+                for epoch in range(pretrain_epochs):
+                    outputs = self.model(x_train)
+                    loss = self.criterion(outputs.squeeze(), y_train)
 
-                self.optimizer.zero_grad()
-                loss.backward()
-                self.optimizer.step()
+                    self.optimizer.zero_grad()
+                    loss.backward()
+                    self.optimizer.step()
 
-                print(f'Pre-training Epoch: {epoch+1:2d}/{pretrain_epochs}')
-
-            print('===== Pre-training done =====')
+                    pbar.update(1)
+                pbar.set_postfix_str('done')
 
         # Main training loop
         for epoch in range(self.num_epochs):
@@ -203,9 +208,9 @@ class RTRNNTrainer:
             y_test_np = y_test.detach().cpu().numpy()
 
         # Calculate evaluation metrics
-        mse = np.mean((predictions - y_test_np) ** 2)
-        rmse = np.sqrt(mse)
-        mae = np.mean(np.abs(predictions - y_test_np))
+        mse = MSE(y_test_np, predictions)
+        rmse = MSE(y_test_np, predictions, squared=False)
+        mae = MAE(y_test_np, predictions)
 
         print('=' * 30)
         print(
