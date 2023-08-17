@@ -48,7 +48,7 @@ def create_parser():
                         help='The number of pre-training epochs.')
     parser.add_argument('-lr', '--learning-rate', type=float, default=1e-3,
                         help='The learning rate for training the model. Defaults to 0.001.')
-    parser.add_argument('--patience', type=int, default=5,
+    parser.add_argument('--patience', type=int, default=20,
                         help='The patience parameter for early stopping.')
     parser.add_argument('--seed', type=int, default=42, help='Sets the seed.')
     parser.add_argument('--threshold', type=float, default=1e-4,
