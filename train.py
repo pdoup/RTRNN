@@ -246,8 +246,8 @@ class RTRNNTrainer:
         timestamp = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
         dirname = f'{dirname}_{timestamp}'
 
-        # Create the directory if it doesn't exist
-        os.makedirs(dirname, exist_ok=True)
+        # Create the directory
+        os.makedirs(dirname, exist_ok=overwrite)
 
         # Check if the file already exists
         filename = os.path.join(dirname, 'model.pt')
