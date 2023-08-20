@@ -21,8 +21,9 @@ class RTRNNBlock(nn.Module):
     such as its architecture and training parameters.
     """
 
-    def __init__(self, input_size, hidden_size, output_size, num_layers=1,
-                 dropout_prob=0.1, window_size=10, device='cpu'):
+    def __init__(self, input_size: int, hidden_size: int, output_size: int,
+                 num_layers: int = 1, dropout_prob: float = 0.1,
+                 window_size: int = 10, fcn_fanout: int = 16, device: str = 'cpu'):
         """
         A PyTorch implementation of a Randomized Temporal Recurrent Neural
         Network (RTRNNBlock) with skip connections in the FCN.
@@ -41,6 +42,10 @@ class RTRNNBlock(nn.Module):
             The probability of an element to be zeroed. Defaults to 0.1.
         window_size : int, optional
             The window size to use for shuffling the input. Defaults to 10.
+        fcn_fanout : int, optional
+            Augmentation factor of neurons in FCN hidden layer. Defaults to 16.
+        device : str, optional
+            Device to load the model. Defaults to 'cpu'.
         """
 
         super(RTRNNBlock, self).__init__()
@@ -48,6 +53,7 @@ class RTRNNBlock(nn.Module):
         self.hidden_size = hidden_size
         self.num_layers = num_layers
         self.window_size = window_size
+        self.fcn_fanout = fcn_fanout
         self.device = device
         self.num_rnns = window_size // 2 if window_size % 2 == 0 else (
             window_size + 1) // 2
@@ -57,11 +63,11 @@ class RTRNNBlock(nn.Module):
                                    range(self.num_rnns)])
         self.rnn_orig = nn.RNN(input_size, hidden_size,
                                num_layers, nonlinearity='tanh')
-        self.fc1 = nn.Linear(hidden_size * 2, hidden_size * 16)
+        self.fc1 = nn.Linear(hidden_size * 2, hidden_size * fcn_fanout)
         self.dropout1 = nn.Dropout(dropout_prob)
-        self.fc2 = nn.Linear(hidden_size * 16, hidden_size)
+        self.fc2 = nn.Linear(hidden_size * fcn_fanout, hidden_size)
         self.dropout2 = nn.Dropout(dropout_prob)
-        self.fc3 = nn.Linear(hidden_size * 17, output_size)
+        self.fc3 = nn.Linear(hidden_size * (fcn_fanout + 1), output_size)
 
     def forward(self, x):
         """
@@ -113,7 +119,7 @@ class FusedRTRNN(nn.Module):
 
     def __init__(self, input_size: int, hidden_sizes: List[int], output_size: int,
                  num_layers: List[int], num_blocks: int, dropout_prob: float = 0.1,
-                 window_size: int = 10, device: str = 'cpu'):
+                 window_size: int = 10, fcn_fanout: int = 16, device: str = 'cpu'):
         """
         A PyTorch module that implements a fused RTRNN model.
 
@@ -137,7 +143,10 @@ class FusedRTRNN(nn.Module):
             The size of the window for the RTRNN blocks. Defaults to 10.
         num_blocks : int, optional
             The number of RTRNN blocks in the model. Defaults to 2.
-
+        fcn_fanout : int, optional
+            Augmentation factor of neurons in FCN hidden layer. Defaults to 16.
+        device : str, optional
+            Device to load the model. Defaults to 'cpu'.
         Raises
         ------
         ValueError
@@ -156,6 +165,7 @@ class FusedRTRNN(nn.Module):
         """
         super(FusedRTRNN, self).__init__()
         self.num_blocks = num_blocks
+        self.fcn_fanout = fcn_fanout
         self.window_size = window_size
         if len(hidden_sizes) != num_blocks or len(num_layers) != num_blocks:
             raise ValueError(
@@ -163,7 +173,7 @@ class FusedRTRNN(nn.Module):
         self.params = get_params(inspect.currentframe())
         self.rtrnns = nn.ModuleList([
             RTRNNBlock(input_size, hidden_sizes[i], output_size, num_layers[i],
-                       dropout_prob, window_size, device)
+                       dropout_prob, window_size, fcn_fanout, device)
             for i in range(num_blocks)])
 
         self.weights = [hidden_size / sum(hidden_sizes)
