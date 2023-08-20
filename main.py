@@ -44,11 +44,13 @@ def create_parser():
                         help='A list of the number of layers for each RTRNN block in the model.')
     parser.add_argument('--num_blocks', type=int, default=1,
                         help='The number of RTRNN blocks in the model.')
+    parser.add_argument('--fanout', type=int, default=16,
+                        help='The augmentation factor of the FCN module')
     parser.add_argument('--pretrain_epochs', type=check_pretrain_epochs, default=None,
                         help='The number of pre-training epochs.')
     parser.add_argument('-lr', '--learning-rate', type=float, default=1e-3,
                         help='The learning rate for training the model. Defaults to 0.001.')
-    parser.add_argument('--patience', type=int, default=20,
+    parser.add_argument('--patience', type=int, default=5,
                         help='The patience parameter for early stopping.')
     parser.add_argument('--seed', type=int, default=42, help='Sets the seed.')
     parser.add_argument('--threshold', type=float, default=1e-4,
@@ -142,7 +144,7 @@ def main():
     if not data_path.is_file():
         raise ValueError(f"{data_path} is not a valid file path")
 
-    data = pd.read_csv(data_path, parse_dates=True, infer_datetime_format=True,
+    data = pd.read_csv(data_path, parse_dates=True,
                        index_col=0, on_bad_lines='warn')
     print(f'{data_path.stem} contains {data.shape[0]} valid rows')
 
@@ -167,7 +169,7 @@ def main():
         model = FusedRTRNN(args.input_size, args.hidden_sizes,
                            args.output_size, args.num_layers, args.num_blocks,
                            window_size=args.window_size, dropout_prob=args.dropout,
-                           device=args.device).to(args.device)
+                           fcn_fanout=args.fanout, device=args.device).to(args.device)
 
         # define loss function and optimizer
         criterion = nn.MSELoss()
