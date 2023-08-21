@@ -14,6 +14,7 @@ import json
 from datetime import datetime
 from sklearn.metrics import mean_squared_error as MSE
 from sklearn.metrics import mean_absolute_error as MAE
+from utils import smape as sMAPE
 from functools import singledispatchmethod
 from model import FusedRTRNN
 
@@ -211,20 +212,22 @@ class RTRNNTrainer:
         mse = MSE(y_test_np, predictions)
         rmse = MSE(y_test_np, predictions, squared=False)
         mae = MAE(y_test_np, predictions)
+        smape = sMAPE(y_test_np, predictions)
 
-        print('=' * 30)
+        print('=' * 35)
         print(
-            f'Showing test metrics for an evaluation periods of {len(y_test)} days')
-        print('=' * 30)
-        print(f'MSE:{mse:9.5f}')
-        print(f'RMSE:{rmse:8.5f}')
-        print(f'MAE:{mae:9.5f}')
+            f'Performance metrics for an evaluation periods of {len(y_test)} timesteps')
+        print('=' * 35)
+        print(f'MSE:{mse:10.5f}')
+        print(f'RMSE:{rmse:9.5f}')
+        print(f'MAE:{mae:10.5f}')
+        print(f'sMAPE:{smape:6.3f} %')
 
         return predictions, y_test_np
 
     @torch.no_grad()
     def predict_single(self, x_test: torch.Tensor) -> float:
-        """Get single day-ahead prediction."""
+        """Get single one-step-ahead prediction."""
         return self.model(x_test).detach().item()
 
     def save_model(self, dirname, overwrite: bool = False) -> None:
