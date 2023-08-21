@@ -189,6 +189,34 @@ def check_val_size(val_size: float) -> float:
         raise argparse.ArgumentTypeError(
             f"val_size must be between 0 and 1, but got {val_size}")
 
+def smape(y_true: np.ndarray, y_pred: np.ndarray) -> float:
+    """
+    Calculate the symmetric mean absolute percentage error (sMAPE).
+
+    Parameters
+    ----------
+    y_true : np.ndarray
+        The ground truth values.
+    y_pred : np.ndarray
+        The predicted values.
+
+    Returns
+    -------
+    float
+        The sMAPE value.
+
+    Raises
+    ------
+    ValueError
+        If the sizes of the input arrays are not equal.
+    """
+    y_true, y_pred = y_true.flatten(), y_pred.flatten()
+
+    if y_true.size != y_pred.size:
+        raise ValueError("The sizes of the input arrays must be equal.")
+
+    return 100. * np.mean(np.abs(y_true - y_pred) / (np.abs(y_true) + np.abs(y_pred)))
+
 
 def check_pretrain_epochs(pretrain_epochs: Union[int, None]) -> Union[int,
                                                                       None]:
