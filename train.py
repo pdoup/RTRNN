@@ -216,7 +216,7 @@ class RTRNNTrainer:
 
         print('=' * 35)
         print(
-            f'Performance metrics for an evaluation periods of {len(y_test)} timesteps')
+            f'Performance metrics for an evaluation period of {len(y_test)} timesteps')
         print('=' * 35)
         print(f'MSE:{mse:10.5f}')
         print(f'RMSE:{rmse:9.5f}')
